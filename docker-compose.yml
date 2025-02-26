@@ -1,0 +1,421 @@
+services:
+
+# This container needs ollama installed and running
+#  open-webui:
+#    image: ghcr.io/open-webui/open-webui:main
+#    container_name: open-webui
+#    volumes:
+#      - ${HOME_DIR}/Docker/data/open-webui:/app/backend/data
+#    ports:
+#      - 8300:8080
+#    extra_hosts:
+#      - host.docker.internal:host-gateway
+#    restart: unless-stopped
+
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - ${HOME_DIR}/Docker/config/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro  # This is crucial for Bluetooth
+      - /var/run/dbus:/var/run/dbus:ro
+      - /dev/bus/usb:/dev/bus/usb
+    ports:
+      - 8123:8123
+    environment:
+      - TZ=${TIMEZONE}
+
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    restart: unless-stopped
+    ports:
+      - "4533:4533"
+    environment:
+      - ND_MUSICFOLDER=/music
+      - ND_DATAFOLDER=/data
+      - ND_SCANINTERVAL=1h
+      - ND_AUTHENTICATOR=internal
+      - ND_DEFAULTLOGINMETHOD=internal
+    volumes:
+      - ${HOME_DIR}/Music:/music
+      - ${HOME_DIR}/Docker/data/navidrome:/data
+
+  linkwarden-db:
+    image: postgres:16-alpine
+    container_name: linkwarden-db
+    environment:
+      - POSTGRES_USER=${LW_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${LW_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${LW_POSTGRES_DB}
+    volumes:
+      - ${HOME_DIR}/Docker/data/linkwarden/db:/var/lib/postgresql/data
+    restart: always
+
+  linkwarden:
+    image: ghcr.io/linkwarden/linkwarden:latest
+    container_name: linkwarden
+    environment:
+      - DATABASE_URL=postgresql://${LW_POSTGRES_USER}:${LW_POSTGRES_PASSWORD}@linkwarden-db:5432/${LW_POSTGRES_DB}
+      - NEXTAUTH_SECRET=${LW_NEXTAUTH_SECRET}
+    ports:
+      - "${LW_PORT}:3000"
+    volumes:
+      - ${HOME_DIR}/Docker/data/linkwarden:/data/data
+    depends_on:
+      - linkwarden-db
+    restart: always
+
+  seafile:
+    image: seafileltd/seafile-mc:11.0-latest
+    container_name: seafile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - seafile-db
+      - seafile-memcached
+    volumes:
+      - ${HOME_DIR}/Docker/data/seafile:/shared
+    environment:
+      - TZ=${TIMEZONE}
+      - DB_HOST=seafile-db
+      - DB_ROOT_PASSWD=${DB_PASSWORD}
+      - SEAFILE_SERVER_LETSENCRYPT=false
+      - SEAFILE_SERVER_HOSTNAME=${SEAFILE_HOSTNAME}
+      - SEAFILE_ADMIN_EMAIL=${SEAFILE_ADMIN_EMAIL}
+      - SEAFILE_ADMIN_PASSWORD=${SEAFILE_ADMIN_PASSWORD}
+
+  seafile-db:
+    image: mariadb
+    container_name: seafile-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_LOG_CONSOLE=true
+      - MARIADB_AUTO_UPGRADE=1
+    volumes:
+      - ${HOME_DIR}/Docker/data/seafile/db:/var/lib/mysql
+
+  seafile-memcached:
+    image: memcached:1.6-alpine
+    container_name: seafile-memcached
+    entrypoint: memcached -m 256
+    restart: unless-stopped
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=${TIMEZONE}
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LIFECYCLE_HOOKS=True
+      - WATCHTOWER_SCHEDULE=0 0 2 * * *  # Runs at 2 AM everyday
+      - WATCHTOWER_NOTIFICATIONS=shoutrrr
+      - WATCHTOWER_NOTIFICATION_URL=telegram://${TELEGRAM_BOT_TOKEN}@telegram/?chats=${TELEGRAM_CHAT_ID}
+      - WATCHTOWER_NOTIFICATION_REPORT=true
+
+  guacamole:
+    container_name: guacamole
+    image: jwetzell/guacamole
+    healthcheck:
+     test: curl -f http://localhost:8080/ || exit 1
+    mem_limit: 6g
+    cpu_shares: 1024
+    security_opt:
+      - no-new-privileges:false
+    restart: on-failure:5
+    ports:
+      - 8348:8080
+    volumes:
+      - ${HOME_DIR}/Docker/config/guacamole:/config:rw
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: ${TIMEZONE}
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOME_DIR}/Docker/config/portainer:/data
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    environment:
+      PUID: 1000
+      PGID: 1000
+    ports:
+      - 3000:3000
+    volumes:
+      - ${HOME_DIR}/Docker/config/homepage:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  tailscaled:
+    image: tailscale/tailscale:stable
+    container_name: tailscaled
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_AUTHKEY=${TAILSCALE_AUTHKEY}
+    volumes:
+      - /var/lib:/var/lib
+      - /dev/net/tun:/dev/net/tun
+    restart: unless-stopped
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    ports:
+      - 8888:8080
+    environment:
+        TELEGRAM_TOKEN: ${TELEGRAM_BOT_TOKEN}
+        TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+        ENABLE_LOGIN_NOTIFICATIONS: true
+        ENABLE_LOGIN_FAIL_NOTIFICATIONS: true
+        ROCKET_PORT: 8080
+        ROCKET_TLS_PORT: 8443
+        DOMAIN: ${VAULTWARDEN_DOMAIN}
+        SSL: true
+        VAULTWARDEN_WEB_VAULT_FOLDER: /data
+        VAULTWARDEN_DATA_FOLDER: /data
+        LOG_FILE: /data/vaultwarden.log
+        EXTENDED_LOG: true
+        ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN}
+    volumes:
+      - ${HOME_DIR}/Docker/data/vaultwarden:/data
+
+
+  stirling-pdf:
+    image: frooodle/s-pdf:latest
+    container_name: stirling-pdf
+    restart: unless-stopped
+    ports:
+      - '8580:8080'
+    volumes:
+      - ${HOME_DIR}/Docker/config/stirling-pdf:/configs
+    environment:
+      - DOCKER_ENABLE_SECURITY=false
+      - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+      - LANGS=en_GB
+
+  yt-dlp-web:
+    image: sooros5132/yt-dlp-web
+    container_name: yt-dlp-web
+    user: 1000:1000
+    environment:
+      - AUTH_SECRET=${YT_DLP_SECRET}
+      - CREDENTIAL_USERNAME=${YT_DLP_USERNAME}
+      - CREDENTIAL_PASSWORD=${YT_DLP_PASSWORD}
+    volumes:
+      - ${HOME_DIR}/Downloads/yt-dlp:/downloads
+      - ${HOME_DIR}/Docker/data/yt-dlp/cache:/cache
+    ports:
+      - 8100:3000
+    restart: unless-stopped
+
+  transmission:
+    image: linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+      - USER=${TRANSMISSION_USER}
+      - PASS=${TRANSMISSION_PASS}
+    volumes:
+      - ${HOME_DIR}/Docker/config/transmission:/config
+      - ${HOME_DIR}/Downloads:/downloads
+      - /etc/localtime:/etc/localtime:ro
+
+  syncthing:
+    image: syncthing/syncthing:latest
+    container_name: syncthing
+    restart: unless-stopped
+    ports:
+      - "8384:8384"
+      - "22000:22000"
+      - "21027:21027/udp"
+    volumes:
+      - ${HOME_DIR}/Docker/config/syncthing:/var/syncthing/config
+      - ${HOME_DIR}/Docker/data/syncthing/:/var/syncthing
+    environment:
+      - STGUIADDRESS=0.0.0.0:8384
+      - STNORESTART=yes
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    ports:
+      - 8096:8096
+    environment:
+      - UID=1000
+      - GID=1000
+      - TZ=${TIMEZONE}
+      - JELLYFIN_FFmpeg__EnableHardwareEncoding=true
+      - JELLYFIN_HardwareAccelerationType=vaapi
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - ${HOME_DIR}/Docker/config/jellyfin:/config
+      - ${HOME_DIR}/Videos:/media
+      - /mnt/gdrive:/gdrive # from Synology drive
+      - ./cache:/cache
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    restart: unless-stopped
+    ports:
+      - 13378:80
+    volumes:
+      - ${HOME_DIR}/Docker/data/audiobookshelf/audiobooks:/audiobooks
+      - ${HOME_DIR}/Docker/data/audiobookshelf/podcasts:/podcasts
+      - ${HOME_DIR}/Docker/config/audiobookshelf/config:/config
+      - ${HOME_DIR}/Docker/config/audiobookshelf/metadata:/metadata
+    environment:
+      - TZ=${TIMEZONE}
+
+
+  kavita:
+    image: lscr.io/linuxserver/kavita:latest
+    container_name: kavita
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${HOME_DIR}/Docker/config/kavita:/config
+      - ${HOME_DIR}/Docker/data/kavita/books:/data
+    ports:
+      - 5000:5000
+    restart: unless-stopped
+
+  memos:
+    image: neosmemo/memos:latest
+    container_name: memos
+    restart: unless-stopped
+    ports:
+      - "5230:5230"
+    volumes:
+      - ${HOME_DIR}/Docker/config/memos:/var/opt/memos
+
+  it-tools:
+    image: 'corentinth/it-tools:latest'
+    ports:
+      - '8000:80'
+    restart: unless-stopped
+    container_name: it-tools
+
+  file-browser:
+    image: filebrowser/filebrowser
+    container_name: file-browser
+    user: 1000:1000
+    ports:
+      - "5050:80"
+    volumes:
+      - ${HOME_DIR}/:/srv
+      - ${HOME_DIR}/Docker/data/filebrowser/filebrowser.db:/database.db
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    volumes:
+      - ${HOME_DIR}/Docker/data/nginx/data:/data
+      - ${HOME_DIR}/Docker/data/nginx/letsencrypt:/etc/letsencrypt
+    environment:
+      - DISABLE_IPV6=true
+    networks:
+      - nginx-proxy
+
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: freshrss
+    ports:
+      - "4065:80"
+    environment:
+      - 'CRON_MIN=*/30'
+      - 'DB_TYPE=sqlite'
+    volumes:
+      - ${HOME_DIR}/Docker/data/freshrss:/var/www/FreshRSS/data
+    restart: unless-stopped
+
+  paperless-ngx:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless-ngx
+    restart: unless-stopped
+    depends_on:
+      - postgres-db
+      - redis
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PAPERLESS_URL=${PAPERLESS_URL}
+      - ALLOWED_HOSTS=${PAPERLESS_ALLOWED_HOSTS}
+      - PAPERLESS_REDIS=redis://redis:6379
+      - PAPERLESS_DBHOST=postgres-db
+      - PAPERLESS_DBNAME=${PAPERLESS_DBNAME}
+      - PAPERLESS_DBUSER=${PAPERLESS_DBUSER}
+      - PAPERLESS_DBPASS=${PAPERLESS_DBPASS}
+      - PAPERLESS_TIME_ZONE=${TIMEZONE}
+      - PAPERLESS_SECRET_KEY=${PAPERLESS_SECRET_KEY}
+    volumes:
+      - ${HOME_DIR}/Docker/data/paperless/inbox:/usr/src/paperless/inbox
+      - ${HOME_DIR}/Docker/data/paperless/consume:/usr/src/paperless/consume
+      - ${HOME_DIR}/Docker/data/paperless/media:/usr/src/paperless/media
+      - ${HOME_DIR}/Docker/data/paperless/config:/usr/src/paperless/config
+    ports:
+      - 5250:8000
+
+  postgres-db:
+    container_name: postgres
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ${HOME_DIR}/Docker/data/postgres:/var/lib/postgresql/data
+      - ${HOME_DIR}/Docker/config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  redis:
+    container_name: redis
+    image: redis:alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+
+networks:
+  nginx-proxy:
+    driver: bridge

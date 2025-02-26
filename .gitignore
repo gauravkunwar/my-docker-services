@@ -1,0 +1,10 @@
+# Environment variables
+.env
+
+# Folders
+/data
+/config
+/cache
+
+# Old docker compose file
+docker-compose-old.yml
