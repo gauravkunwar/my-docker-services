@@ -22,8 +22,9 @@ This repository contains a `docker-compose.yml` file to set up various self-host
 - **Seafile** - Self-hosted file synchronization service.
 - **Stirling PDF** - Self-hosted PDF manipulation tool.
 - **Syncthing** - File synchronization across devices.
-- **Tailscale** - Secure VPN that makes remote access and networking simple using WireGuard encryption.&#x20;
+- **Tailscale** - Secure VPN that makes remote access and networking simple using WireGuard encryption.
 - **Transmission** - BitTorrent client for downloading torrents.
+- **Vaultwarden** - Lightweight Bitwarden-compatible password manager.
 
 ## 🚀 Getting Started
 
@@ -47,30 +48,59 @@ cd docker-setup
 You need to create an `.env` file to store environment variables. Here's an example:
 
 ```ini
+# For multiple containers
 HOME_DIR=/home/your-username
-TIMEZONE=America/New_York
+TIMEZONE=Your/Timezone
 
-LW_POSTGRES_USER=linkwarden
-LW_POSTGRES_PASSWORD=securepassword
-LW_POSTGRES_DB=linkwarden
+# For Tailscale
+TAILSCALE_AUTHKEY=your_tailscale_authkey
 
-LW_NEXTAUTH_SECRET=your-secret-key
-LW_PORT=3000
+# For Transmission
+TRANSMISSION_USER=your_transmission_username
+TRANSMISSION_PASS=your_transmission_password
 
-TELEGRAM_BOT_TOKEN=your-bot-token
-TELEGRAM_CHAT_ID=your-chat-id
+# For Vaultwarden
+VAULTWARDEN_DOMAIN=https://your.vaultwarden.domain
+VAULTWARDEN_ADMIN_TOKEN=your_vaultwarden_admin_token
 
-TAILSCALE_AUTHKEY=your-tailscale-auth-key
+# For Paperless-ngx
+PAPERLESS_URL=https://your.paperless.domain
+PAPERLESS_ALLOWED_HOSTS=your.allowed.hosts,separated.by.commas
+PAPERLESS_DBNAME=your_paperless_db_name
+PAPERLESS_DBUSER=your_paperless_db_user
+PAPERLESS_DBPASS=your_paperless_db_password
+PAPERLESS_SECRET_KEY=your_paperless_secret_key
 
-TRANSMISSION_USER=your-username
-TRANSMISSION_PASS=your-password
+# For Postgres
+POSTGRES_USER=your_postgres_user
+POSTGRES_PASSWORD=your_postgres_password
 
-PAPERLESS_URL=http://your-server-ip
-PAPERLESS_ALLOWED_HOSTS=your-server-ip
-PAPERLESS_DBNAME=paperless
-PAPERLESS_DBUSER=paperless
-PAPERLESS_DBPASS=securepassword
-PAPERLESS_SECRET_KEY=your-secret-key
+# For yt-dlp
+YT_DLP_SECRET=your_yt-dlp_secret
+YT_DLP_USERNAME=your_yt-dlp_username
+YT_DLP_PASSWORD=your_yt-dlp_password
+
+# For WatchTower
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_telegram_chat_id
+
+# For Seafile
+SEAFILE_HOSTNAME=https://your.seafile.domain
+SEAFILE_ADMIN_EMAIL=your_seafile_admin@email
+SEAFILE_ADMIN_PASSWORD=your_seafile_password
+DB_PASSWORD=your_seafile_db_password_here
+DB_NAME=your_seafile_db_name
+
+# For Linkwarden
+## Port configuration
+LW_PORT=linkwarden_port_number
+## Database configuration
+LW_POSTGRES_USER=linkwarden_db_user
+LW_POSTGRES_PASSWORD=linkwarden_db_password
+LW_POSTGRES_DB=linkwarden_db_name
+## NextAuth configuration
+LW_NEXTAUTH_URL=http://localhost:linkwarden_port_number
+LW_NEXTAUTH_SECRET=nextauth_secret
 ```
 
 ### 4. Start the Containers
@@ -112,6 +142,7 @@ docker ps
 | Stirling PDF        | `http://localhost:8580`  |
 | Syncthing           | `http://localhost:8384`  |
 | Transmission        | `http://localhost:9091`  |
+| Vaultwarden         | `http://localhost:8888`  |
 
 ### 7. Stopping and Removing Containers
 
