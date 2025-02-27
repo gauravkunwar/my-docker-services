@@ -1,23 +1,29 @@
-
 # Docker Services Setup
 
 This repository contains a `docker-compose.yml` file to set up various self-hosted services using Docker and Docker Compose.
 
 ## 📌 Services Included
 
-- **Home Assistant** - Smart home automation platform.
-- **Navidrome** - Music streaming server.
-- **Linkwarden** - Self-hosted bookmark manager.
-- **Nginx Proxy Manager** - Reverse proxy with SSL support.
-- **Watchtower** - Automatic updates for Docker containers.
-- **Tailscale** - Secure VPN for remote access.
-- **Transmission** - BitTorrent client for downloading torrents.
-- **Syncthing** - File synchronization across devices.
-- **Jellyfin** - Media streaming server.
+- **Audiobookshelf** - Self-hosted audiobook and podcast server.
+- **File Browser** - Web-based file manager.
 - **FreshRSS** - Self-hosted RSS feed aggregator.
+- **Guacamole** - Remote desktop gateway.
+- **Home Assistant** - Smart home automation platform.
+- **Homepage** - Self-hosted dashboard for organizing services.
+- **IT Tools** - Collection of online networking tools.
+- **Jellyfin** - Media streaming server.
+- **Kavita** - Self-hosted manga, comic, and book server.
+- **Linkwarden** - Self-hosted bookmark manager.
+- **Memos** - Self-hosted note-taking application.
+- **Navidrome** - Music streaming server.
+- **Nginx Proxy Manager** - Reverse proxy with SSL support.
 - **Paperless-NGX** - Document management system.
-- **Redis** - In-memory key-value store for caching.
-- **PostgreSQL** - Database for Paperless-NGX & Linkwarden.
+- **Portainer** - Web UI for managing Docker containers.
+- **Seafile** - Self-hosted file synchronization service.
+- **Stirling PDF** - Self-hosted PDF manipulation tool.
+- **Syncthing** - File synchronization across devices.
+- **Tailscale** - Secure VPN that makes remote access and networking simple using WireGuard encryption.&#x20;
+- **Transmission** - BitTorrent client for downloading torrents.
 
 ## 🚀 Getting Started
 
@@ -59,7 +65,7 @@ TAILSCALE_AUTHKEY=your-tailscale-auth-key
 TRANSMISSION_USER=your-username
 TRANSMISSION_PASS=your-password
 
-PAPERLESS_URL=http://your-server-ip:5250
+PAPERLESS_URL=http://your-server-ip
 PAPERLESS_ALLOWED_HOSTS=your-server-ip
 PAPERLESS_DBNAME=paperless
 PAPERLESS_DBUSER=paperless
@@ -85,17 +91,27 @@ docker ps
 
 ### 6. Access the Services
 
-| Service              | URL                           |
-|----------------------|-----------------------------|
-| Home Assistant      | `http://localhost:8123`      |
-| Navidrome           | `http://localhost:4533`      |
-| Linkwarden         | `http://localhost:3000`      |
-| Nginx Proxy Manager | `http://localhost:81`       |
-| Transmission        | `http://localhost:9091`     |
-| Syncthing          | `http://localhost:8384`      |
-| Jellyfin           | `http://localhost:8096`      |
-| FreshRSS           | `http://localhost:4065`      |
-| Paperless-NGX      | `http://localhost:5250`      |
+| Service             | URL                      |
+| ------------------- | ------------------------ |
+| Audiobookshelf      | `http://localhost:13378` |
+| File Browser        | `http://localhost:5050`  |
+| FreshRSS            | `http://localhost:4065`  |
+| Guacamole           | `http://localhost:8348`  |
+| Home Assistant      | `http://localhost:8123`  |
+| Homepage            | `http://localhost:3000`  |
+| IT Tools            | `http://localhost:8000`  |
+| Jellyfin            | `http://localhost:8096`  |
+| Kavita              | `http://localhost:5000`  |
+| Linkwarden          | `http://localhost:3160`  |
+| Memos               | `http://localhost:5230`  |
+| Navidrome           | `http://localhost:4533`  |
+| Nginx Proxy Manager | `http://localhost:81`    |
+| Paperless-NGX       | `http://localhost:5250`  |
+| Portainer           | `http://localhost:9000`  |
+| Seafile             | `http://localhost:8080`  |
+| Stirling PDF        | `http://localhost:8580`  |
+| Syncthing           | `http://localhost:8384`  |
+| Transmission        | `http://localhost:9091`  |
 
 ### 7. Stopping and Removing Containers
 
@@ -141,4 +157,3 @@ docker-compose logs -f
 - This setup assumes that your `$HOME_DIR` is correctly set in the `.env` file.
 - Some services require additional configuration through their web UI after initial setup.
 - Ensure that you change default passwords and secrets in your `.env` file before running the setup.
-
