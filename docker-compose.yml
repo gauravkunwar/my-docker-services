@@ -1,6 +1,6 @@
 services:
 
-# This container needs ollama installed and running
+# This container needs ollama installed and running locally
 #  open-webui:
 #    image: ghcr.io/open-webui/open-webui:main
 #    container_name: open-webui
