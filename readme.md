@@ -32,7 +32,7 @@ sudo apt update && sudo apt install docker docker-compose -y
 ### 2. Clone this Repository
 
 ```sh
-git clone https://github.com/your-username/docker-setup.git
+git clone https://github.com/gauravkunwar/my-docker-services.git
 cd docker-setup
 ```
 
@@ -115,7 +115,7 @@ docker-compose down -v
 
 ### Update Containers
 
-Watchtower is configured to automatically update the containers. However, you can manually update them with:
+Watchtower is configured to automatically update the containers daily at 2AM. However, you can manually update them with:
 
 ```sh
 docker-compose pull
