@@ -203,7 +203,6 @@ services:
     volumes:
       - ${HOME_DIR}/Docker/data/vaultwarden:/data
 
-
   stirling-pdf:
     image: frooodle/s-pdf:latest
     container_name: stirling-pdf
@@ -299,7 +298,6 @@ services:
       - ${HOME_DIR}/Docker/config/audiobookshelf/metadata:/metadata
     environment:
       - TZ=${TIMEZONE}
-
 
   kavita:
     image: lscr.io/linuxserver/kavita:latest
