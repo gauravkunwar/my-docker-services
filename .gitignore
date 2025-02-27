@@ -8,3 +8,5 @@
 
 # Old docker compose file
 docker-compose-old.yml
+
+.directory
