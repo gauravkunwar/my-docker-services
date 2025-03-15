@@ -12,6 +12,41 @@ services:
 #      - host.docker.internal:host-gateway
 #    restart: unless-stopped
 
+#  expenseowl:
+#    container_name: expenseowl
+#    image: tanq16/expenseowl:main
+#    restart: unless-stopped
+#    ports:
+#      - 5006:8080
+#    volumes:
+#      - ${HOME_DIR}/Docker/data/expenseowl:/app/data
+
+  actualbudget:
+    container_name: actualbudget
+    image: ghcr.io/actualbudget/actual
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TIMEZONE}
+    ports:
+      - "5006:5006"
+    volumes:
+      - ${HOME_DIR}/Docker/data/actualbudget:/data
+
+  silverbullet:
+    image: ghcr.io/silverbulletmd/silverbullet
+    container_name: silverbullet
+    restart: unless-stopped
+    environment:
+      PUID: 1000
+      PGID: 1000
+      SB_USER: ${SILVERBULLET_CREDENTIALS}
+    volumes:
+      - ${HOME}/Docker/data/silverbullet:/space
+    ports:
+      - 3020:3000
+
   homeassistant:
     container_name: homeassistant
     image: "ghcr.io/home-assistant/home-assistant:stable"
@@ -143,7 +178,7 @@ services:
       TZ: ${TIMEZONE}
 
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer:latest #previously using "portainer/portainer-ce:latest"
     container_name: portainer
     restart: unless-stopped
     ports:
@@ -152,12 +187,23 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOME_DIR}/Docker/config/portainer:/data
 
+  yacht:
+    image: selfhostedpro/yacht
+    container_name: yacht
+    restart: unless-stopped
+    ports:
+      - 8040:8000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOME_DIR}/Docker/config/yacht:/config
+
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     environment:
       PUID: 1000
       PGID: 1000
+      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_URL} #kunwar.duckdns.org
     ports:
       - 3000:3000
     volumes:
